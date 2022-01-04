@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { BadRequestException, HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { CreateUserDto } from "../dto/createUserDto";
@@ -10,7 +10,7 @@ import { ROLE } from "src/shared/role/role";
 export class UserService {
     constructor(
         @InjectModel(User.name) private userModel: Model<UserDocument>,
-    ) {}
+    ) { }
 
     // CREATE USER
     async createUser(createUserDto: CreateUserDto): Promise<string> {
@@ -37,17 +37,21 @@ export class UserService {
 
     // Find user with username, email or phone.
     async findUserByUsernameOrEmailOrPhone({ username, email, phone }: any): Promise<User> {
-        const rs = await this.userModel.findOne(
-            {
-                $or: [
-                    { username: username },
-                    { email: email },
-                    { phone: phone },
-                ],
+        try {
+            const rs = await this.userModel.findOne(
+                {
+                    $or: [
+                        { username: username },
+                        { email: email },
+                        { phone: phone },
+                    ],
+                }
+            ).exec();
+            if (rs) {
+                return rs;
             }
-        ).exec();
-        if (rs) {
-            return rs;
+        } catch (error) {
+            throw new BadRequestException("(service) user not found");
         }
     }
 
